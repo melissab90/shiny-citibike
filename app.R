@@ -8,38 +8,41 @@
 #
 
 library(shiny)
-library(readr)
-citibike_tripdata <- read_csv("https://firebasestorage.googleapis.com/v0/b/citibike-melissa-barrera.appspot.com/o/Bikes%2Fcitibike-tripdata.csv?alt=media&token=14d1c221-049c-4b5f-81e7-91dcd9213c6c")
+require(readr)
 
-dfDateStart <- as.Date(citibike_tripdata$started_at)
-dfDateEnd <- as.Date(citibike_tripdata$ended_at)
+countries <- read_csv("http://becomingvisual.com/rfundamentals/countries.csv")
 
-plot(dfDateStart, dfDateEnd)
+# Define UI for application that draws a scatterplot
+ui <- fluidPage(
+  
+  # Application title
+  titlePanel("Country Data"),
+  
+  # Sidebar with a slider input for number of bins 
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("country",
+                  "Countries",
+                  paste(countries$Country), 
+                  selected = "China", multiple = FALSE)
+    ),
+    
+    # Show a plot of the generated distribution
+    mainPanel(
+      plotOutput("countryPlot")
+    )
+  )
+)
 
-library(tidyr)
-library(dplyr)
-library(knitr)
-
-citibike_tripdata %>% 
-  drop_na %>%
-  group_by(start_station_id) %>%
-  summarize(
-    count = n(),
-    percent = count / nrow(.) * 100
-  ) %>%
-  arrange(desc(count), desc(start_station_id)) %>%
-  head(10) %>%
-  kable
-
-citibike_member <- citibike_tripdata %>% filter(member_casual == "member")
-head(citibike_member)
-
-ggplot(citibike_tripdata, aes(x=as.factor(citibike_tripdata$rideable_type), fill=as.factor(citibike_tripdata$rideable_type) )) + 
-  geom_bar( ) +
-  scale_fill_hue(c = 40) +
-  theme(legend.position="none")
-
-ggplot(citibike_tripdata, aes(x=as.factor(citibike_tripdata$member_casual), fill=as.factor(citibike_tripdata$member_casual) )) + 
-  geom_bar( ) +
-  scale_fill_brewer(palette = "Set1") +
-  theme(legend.position="none")
+# Define server logic required to draw a scatterplot
+server <- function(input, output) {
+  
+  output$countryPlot <- renderPlot({
+    country = input$country
+    plot(countries$Population, countries$`GDP ($ per capita)`, col=ifelse(countries$Country==country, "red","black"),
+         main = "Population and GDP", xlab = "Population", ylab = "GDP ($ per capita)",log="xy")
+    options(scipen=999)
+  })
+}
+# Run the application 
+shinyApp(ui = ui, server = server)
