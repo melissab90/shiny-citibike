@@ -8,42 +8,38 @@
 #
 
 library(shiny)
+library(readr)
+citibike_tripdata <- read_csv("https://firebasestorage.googleapis.com/v0/b/citibike-melissa-barrera.appspot.com/o/Bikes%2Fcitibike-tripdata.csv?alt=media&token=14d1c221-049c-4b5f-81e7-91dcd9213c6c")
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
+dfDateStart <- as.Date(citibike_tripdata$started_at)
+dfDateEnd <- as.Date(citibike_tripdata$ended_at)
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
+plot(dfDateStart, dfDateEnd)
 
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
+library(tidyr)
+library(dplyr)
+library(knitr)
 
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
-    )
-)
+citibike_tripdata %>% 
+  drop_na %>%
+  group_by(start_station_id) %>%
+  summarize(
+    count = n(),
+    percent = count / nrow(.) * 100
+  ) %>%
+  arrange(desc(count), desc(start_station_id)) %>%
+  head(10) %>%
+  kable
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+citibike_member <- citibike_tripdata %>% filter(member_casual == "member")
+head(citibike_member)
 
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
+ggplot(citibike_tripdata, aes(x=as.factor(citibike_tripdata$rideable_type), fill=as.factor(citibike_tripdata$rideable_type) )) + 
+  geom_bar( ) +
+  scale_fill_hue(c = 40) +
+  theme(legend.position="none")
 
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    })
-}
-
-# Run the application 
-shinyApp(ui = ui, server = server)
+ggplot(citibike_tripdata, aes(x=as.factor(citibike_tripdata$member_casual), fill=as.factor(citibike_tripdata$member_casual) )) + 
+  geom_bar( ) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position="none")
